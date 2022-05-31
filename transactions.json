@@ -1,8 +1,0 @@
-{
-  "id":1,
-  "codTransacao":123456,
-  "moeda":"BRL",
-  "emissor":"Brazil",
-  "receptor":"Argentina",
-  "dataTransacao": "31/02/2022 13:01:00"
-}

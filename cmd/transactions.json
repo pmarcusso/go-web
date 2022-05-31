@@ -1,0 +1,8 @@
+{
+  "id":1,
+  "codTransaction":123456,
+  "currency":"BRL",
+  "issuer":"Brazil",
+  "receiver":"Argentina",
+  "dateTransaction": "31/02/2022 13:01:00"
+}
