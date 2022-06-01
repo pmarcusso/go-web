@@ -42,41 +42,15 @@ func main() {
 	transaction := r.Group("/transactions")
 	{
 		transaction.GET("/", controller.GetAll())
-		//transaction.GET("/:id", GetTransactionHandler)
+		transaction.GET("/:id", controller.GetOne())
 		transaction.POST("/", controller.Store())
+		transaction.PUT("/:id", controller.Update())
 	}
 
 	r.GET("/query", GetQueryParameterValueHandler)
 	r.GET("/greetings", greetingsHandler)
 	r.Run()
 }
-
-//func GetTransactionHandler(c *gin.Context) {
-//
-//	id := c.Param("id")
-//
-//	idConvertido, err := strconv.Atoi(id)
-//
-//	if err != nil {
-//		c.JSON(http.StatusInternalServerError, gin.H{
-//			"message": "id is not a number",
-//		})
-//		fmt.Println(err)
-//		return
-//	}
-//
-//	for _, transaction := range transacaos {
-//		if transaction.Id == idConvertido {
-//			c.IndentedJSON(http.StatusOK, transaction)
-//			return
-//		}
-//	}
-//
-//	c.IndentedJSON(http.StatusNotFound, gin.H{
-//		"error": "transação não encontrada",
-//	})
-//
-//}
 
 func GetQueryParameterValueHandler(c *gin.Context) {
 	queryValue := c.Query("currency")
