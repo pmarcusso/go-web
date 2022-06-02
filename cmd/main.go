@@ -39,12 +39,14 @@ func main() {
 
 	r := gin.Default()
 
-	transaction := r.Group("/transactions")
+	transactionGroup := r.Group("/transactions")
 	{
-		transaction.GET("/", controller.GetAll())
-		transaction.GET("/:id", controller.GetOne())
-		transaction.POST("/", controller.Store())
-		transaction.PUT("/:id", controller.Update())
+		transactionGroup.GET("/", controller.GetAll())
+		transactionGroup.GET("/:id", controller.GetOne())
+		transactionGroup.POST("/", controller.Store())
+		transactionGroup.PUT("/:id", controller.Update())
+		transactionGroup.PATCH("/:id", controller.UpdateIssuerReceiver())
+		transactionGroup.DELETE("/:id", controller.Delete())
 	}
 
 	r.GET("/query", GetQueryParameterValueHandler)

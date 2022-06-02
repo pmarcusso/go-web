@@ -74,6 +74,114 @@ func (t *Transaction) Update() gin.HandlerFunc {
 	}
 }
 
+func (t *Transaction) UpdateIssuerReceiver() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		id := c.Param("id")
+
+		token := c.GetHeader("token")
+
+		if token != "123456" {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "você não tem permissão para fazer a solicitação solicitada.",
+			})
+			return
+		}
+
+		idConvertido, err := strconv.Atoi(id)
+		if err != nil {
+
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": "id is not a number",
+			})
+			fmt.Println(err)
+			return
+		}
+
+		var req request
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+		}
+
+		if req.Receiver != "" {
+			updatedReceiver, err := t.service.UpdateReceiver(idConvertido, req.Receiver)
+			if err != nil {
+				c.JSON(http.StatusNotFound, gin.H{
+					"error": err.Error(),
+				})
+				return
+			}
+			c.JSON(http.StatusOK, updatedReceiver)
+			return
+		}
+
+		if req.Issuer != "" {
+			updatedIssuer, err := t.service.UpdateIssuer(idConvertido, req.Issuer)
+			if err != nil {
+				c.JSON(http.StatusNotFound, gin.H{
+					"error": err.Error(),
+				})
+				return
+			}
+			c.JSON(http.StatusOK, updatedIssuer)
+			return
+
+		}
+
+	}
+
+}
+
+func (t *Transaction) UpdateReceiver() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		id := c.Param("id")
+
+		token := c.GetHeader("token")
+
+		if token != "123456" {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "você não tem permissão para fazer a solicitação solicitada.",
+			})
+			return
+		}
+
+		idConvertido, err := strconv.Atoi(id)
+		if err != nil {
+
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": "id is not a number",
+			})
+			fmt.Println(err)
+			return
+		}
+
+		var req request
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+		}
+
+		if req.Receiver == "" {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": errors.New("O campo [issuer] está vazio ou nulo")})
+			return
+		}
+
+		updatedReceiver, err := t.service.UpdateReceiver(idConvertido, req.Receiver)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		c.JSON(http.StatusOK, updatedReceiver)
+	}
+}
+
 func (t *Transaction) Store() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
@@ -114,6 +222,15 @@ func (t *Transaction) Store() gin.HandlerFunc {
 func (t *Transaction) GetOne() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
+
+		token := c.GetHeader("token")
+
+		if token != "123456" {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "você não tem permissão para fazer a solicitação solicitada.",
+			})
+			return
+		}
 
 		idConvertido, err := strconv.Atoi(id)
 
@@ -165,10 +282,39 @@ func (t *Transaction) GetAll() gin.HandlerFunc {
 	}
 }
 
+func (t *Transaction) Delete() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := c.Param("id")
+
+		token := c.GetHeader("token")
+		if token != "123456" {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "você não tem permissão para fazer a solicitação solicitada.",
+			})
+			return
+		}
+
+		idConvertido, err := strconv.Atoi(id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": "id is not a number",
+			})
+			fmt.Println(err)
+			return
+		}
+
+		err = t.service.Delete(idConvertido)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"data": fmt.Sprintf("o produto %d for removido", idConvertido)})
+	}
+}
+
 //TODO CRIAR STRUCT DE ERROR
 func validateFields(req request) error {
-
-	//erros := make([]string, 0)
 
 	if req.CodTransaction == 0 {
 		return errors.New("O campo [codTransaction] está vazio ou nulo")

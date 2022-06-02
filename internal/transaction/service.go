@@ -10,6 +10,9 @@ type Service interface {
 	GetAll() ([]Transaction, error)
 	Store(codTransaction int, currencyType, issuer, receiver string, dateTransaction time.Time) (Transaction, error)
 	Update(id, codTransaction int, currencyType, issuer, receiver string, dateTransaction time.Time) (Transaction, error)
+	UpdateIssuer(id int, issuer string) (Transaction, error)
+	UpdateReceiver(id int, receiver string) (Transaction, error)
+	Delete(id int) error
 }
 
 type service struct {
@@ -55,6 +58,27 @@ func (s *service) Update(id, codTransaction int, currencyType, issuer, receiver 
 	return updatedTransaction, err
 }
 
+func (s *service) UpdateIssuer(id int, issuer string) (Transaction, error) {
+	updateIssuer, err := s.repository.UpdateIssuer(id, issuer)
+
+	if err != nil {
+		log.Println(err.Error())
+		return updateIssuer, err
+	}
+
+	return updateIssuer, err
+}
+func (s *service) UpdateReceiver(id int, receiver string) (Transaction, error) {
+	updateReceiver, err := s.repository.UpdateReceiver(id, receiver)
+
+	if err != nil {
+		log.Println(err.Error())
+		return updateReceiver, err
+	}
+
+	return updateReceiver, err
+}
+
 func (s *service) Store(codTransaction int, currencyType, issuer, receiver string, dateTransaction time.Time) (Transaction, error) {
 
 	newTransaction, err := s.repository.Store(codTransaction, currencyType, issuer, receiver, dateTransaction)
@@ -65,4 +89,8 @@ func (s *service) Store(codTransaction int, currencyType, issuer, receiver strin
 	}
 
 	return newTransaction, nil
+}
+
+func (s *service) Delete(id int) error {
+	return s.repository.Delete(id)
 }

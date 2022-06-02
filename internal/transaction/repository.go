@@ -11,6 +11,9 @@ type Repository interface {
 	GetAll() ([]Transaction, error)
 	Store(codTransaction int, currencyType, issuer, receiver string, dateTransaction time.Time) (Transaction, error)
 	Update(id, codTransaction int, currencyType, issuer, receiver string, dateTransaction time.Time) (Transaction, error)
+	UpdateIssuer(id int, issuer string) (Transaction, error)
+	UpdateReceiver(id int, receiver string) (Transaction, error)
+	Delete(id int) error
 }
 
 type repository struct{}
@@ -62,13 +65,69 @@ func (r *repository) Update(id, codTransaction int, currencyType, issuer, receiv
 	transaction.Receiver = receiver
 	transaction.DateTransaction = dateTransaction
 
-	for i, _ := range transactions {
+	for i := range transactions {
 		if transactions[i].Id == transaction.Id {
 			transactions[i] = transaction
 		}
 	}
 
 	return transaction, nil
+}
+
+func (r *repository) UpdateIssuer(id int, issuer string) (Transaction, error) {
+
+	issuerTransaction, err := r.GetOne(id)
+
+	if err != nil {
+		log.Println(err.Error())
+		return issuerTransaction, err
+	}
+
+	for i := range transactions {
+		if transactions[i].Id == issuerTransaction.Id {
+			transactions[i].Issuer = issuer
+			issuerTransaction = transactions[i]
+		}
+	}
+
+	return issuerTransaction, nil
+}
+
+func (r *repository) UpdateReceiver(id int, receiver string) (Transaction, error) {
+	receiverTransaction, err := r.GetOne(id)
+	if err != nil {
+		log.Println(err.Error())
+		return receiverTransaction, err
+	}
+
+	receiverTransaction.Receiver = receiver
+
+	for i := range transactions {
+		if transactions[i].Id == receiverTransaction.Id {
+			transactions[i].Receiver = receiverTransaction.Receiver
+			receiverTransaction = transactions[i]
+		}
+	}
+	return receiverTransaction, nil
+}
+
+func (r *repository) Delete(id int) error {
+	transaction, err := r.GetOne(id)
+	var index int
+
+	for i := range transactions {
+		if transactions[i].Id == transaction.Id {
+			index = i
+		}
+	}
+
+	if err != nil {
+		log.Println(err.Error())
+		return err
+	}
+
+	transactions = append(transactions[:index], transactions[index+1:]...)
+	return nil
 }
 
 func generateId(transaction *Transaction) Transaction {
