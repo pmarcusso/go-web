@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pmarcusso/go-web/internal/transaction"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 )
@@ -134,62 +135,14 @@ func (t *Transaction) UpdateIssuerReceiver() gin.HandlerFunc {
 
 }
 
-func (t *Transaction) UpdateReceiver() gin.HandlerFunc {
-	return func(c *gin.Context) {
-
-		id := c.Param("id")
-
-		token := c.GetHeader("token")
-
-		if token != "123456" {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "você não tem permissão para fazer a solicitação solicitada.",
-			})
-			return
-		}
-
-		idConvertido, err := strconv.Atoi(id)
-		if err != nil {
-
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"message": "id is not a number",
-			})
-			fmt.Println(err)
-			return
-		}
-
-		var req request
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
-		}
-
-		if req.Receiver == "" {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": errors.New("O campo [issuer] está vazio ou nulo")})
-			return
-		}
-
-		updatedReceiver, err := t.service.UpdateReceiver(idConvertido, req.Receiver)
-		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
-		c.JSON(http.StatusOK, updatedReceiver)
-	}
-}
-
 func (t *Transaction) Store() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		token := c.GetHeader("token")
 
-		if token != "123456" {
+		if token != os.Getenv("TOKEN") {
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "você não tem permissão para fazer a solicitação solicitada.",
+				"error": "você não tem permissão para continuar.",
 			})
 			return
 		}

@@ -1,0 +1,26 @@
+[
+ {
+  "id": 1,
+  "codTransaction": 4534534,
+  "currency": "SRN",
+  "issuer": "Eua",
+  "receiver": "Russia",
+  "dateTransaction": "0001-01-01T00:00:00Z"
+ },
+ {
+  "id": 3,
+  "codTransaction": 4534534,
+  "currency": "SRN",
+  "issuer": "Eua",
+  "receiver": "Russia",
+  "dateTransaction": "0001-01-01T00:00:00Z"
+ },
+ {
+  "id": 4,
+  "codTransaction": 4534534,
+  "currency": "EUR",
+  "issuer": "Londres",
+  "receiver": "Portugal",
+  "dateTransaction": "0001-01-01T00:00:00Z"
+ }
+]

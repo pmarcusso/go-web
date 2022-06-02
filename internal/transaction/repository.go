@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"errors"
+	"github.com/pmarcusso/go-web/pkg/store"
 	"log"
 	"time"
 )
@@ -16,16 +17,23 @@ type Repository interface {
 	Delete(id int) error
 }
 
-type repository struct{}
+type repository struct {
+	db store.Store
+}
 
-func NewRepository() Repository {
-	return &repository{}
+func NewRepository(db store.Store) Repository {
+	return &repository{
+		db: db,
+	}
 }
 
 func (r *repository) GetAll() ([]Transaction, error) {
-	if len(transactions) == 0 {
-		transactions = make([]Transaction, 0)
-	}
+
+	r.db.Read(&transactions)
+
+	//if len(transactions) == 0 {
+	//	transactions = make([]Transaction, 0)
+	//}
 
 	return transactions, nil
 }
@@ -42,16 +50,28 @@ func (r *repository) GetOne(id int) (Transaction, error) {
 }
 
 func (r *repository) Store(codTransaction int, currencyType, issuer, receiver string, dateTransaction time.Time) (Transaction, error) {
+
+	err := r.db.Read(&transactions)
+	if err != nil {
+		return Transaction{}, err
+	}
 	newTrasaction := Transaction{CodTransaction: codTransaction, CurrencyType: currencyType, Issuer: issuer, Receiver: receiver, DateTransaction: dateTransaction}
-
-	newTrasaction = generateId(&newTrasaction)
-
+	newTrasaction = r.generateId(&newTrasaction)
 	transactions = append(transactions, newTrasaction)
+
+	if err := r.db.Write(transactions); err != nil {
+		return Transaction{}, err
+	}
 
 	return newTrasaction, nil
 }
 
 func (r *repository) Update(id, codTransaction int, currencyType, issuer, receiver string, dateTransaction time.Time) (Transaction, error) {
+	err := r.db.Read(&transactions)
+	if err != nil {
+		return Transaction{}, err
+	}
+
 	transaction, err := r.GetOne(id)
 
 	if err != nil {
@@ -71,10 +91,18 @@ func (r *repository) Update(id, codTransaction int, currencyType, issuer, receiv
 		}
 	}
 
+	if err := r.db.Write(transactions); err != nil {
+		return Transaction{}, err
+	}
+
 	return transaction, nil
 }
 
 func (r *repository) UpdateIssuer(id int, issuer string) (Transaction, error) {
+	err := r.db.Read(&transactions)
+	if err != nil {
+		return Transaction{}, err
+	}
 
 	issuerTransaction, err := r.GetOne(id)
 
@@ -90,10 +118,19 @@ func (r *repository) UpdateIssuer(id int, issuer string) (Transaction, error) {
 		}
 	}
 
+	if err := r.db.Write(transactions); err != nil {
+		return Transaction{}, err
+	}
+
 	return issuerTransaction, nil
 }
 
 func (r *repository) UpdateReceiver(id int, receiver string) (Transaction, error) {
+	err := r.db.Read(&transactions)
+	if err != nil {
+		return Transaction{}, err
+	}
+
 	receiverTransaction, err := r.GetOne(id)
 	if err != nil {
 		log.Println(err.Error())
@@ -108,10 +145,19 @@ func (r *repository) UpdateReceiver(id int, receiver string) (Transaction, error
 			receiverTransaction = transactions[i]
 		}
 	}
+
+	if err := r.db.Write(transactions); err != nil {
+		return Transaction{}, err
+	}
+
 	return receiverTransaction, nil
 }
 
 func (r *repository) Delete(id int) error {
+	err := r.db.Read(&transactions)
+	if err != nil {
+		return err
+	}
 	transaction, err := r.GetOne(id)
 	var index int
 
@@ -127,10 +173,17 @@ func (r *repository) Delete(id int) error {
 	}
 
 	transactions = append(transactions[:index], transactions[index+1:]...)
+	if err := r.db.Write(transactions); err != nil {
+		return err
+	}
 	return nil
 }
 
-func generateId(transaction *Transaction) Transaction {
+func (r *repository) generateId(transaction *Transaction) Transaction {
+
+	if err := r.db.Read(&transactions); err != nil {
+		return Transaction{}
+	}
 
 	transLen := len(transactions)
 

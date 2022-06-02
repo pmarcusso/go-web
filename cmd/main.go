@@ -3,8 +3,11 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/joho/godotenv"
 	"github.com/pmarcusso/go-web/cmd/server/handler"
 	"github.com/pmarcusso/go-web/internal/transaction"
+	"github.com/pmarcusso/go-web/pkg/store"
+	"log"
 	"net/http"
 	"time"
 )
@@ -33,7 +36,12 @@ func getErrorMsg(fe validator.FieldError) string {
 
 func main() {
 
-	repo := transaction.NewRepository()
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("erro ao carregar o arquivo .env")
+	}
+
+	db := store.New(store.FileType, "./transactions.json")
+	repo := transaction.NewRepository(db)
 	service := transaction.NewService(repo)
 	controller := handler.NewTransaction(service)
 
