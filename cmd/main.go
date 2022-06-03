@@ -1,25 +1,18 @@
 package main
 
 import (
+	"log"
+	"net/http"
+	"os"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
 	"github.com/pmarcusso/go-web/cmd/server/handler"
 	"github.com/pmarcusso/go-web/internal/transaction"
 	"github.com/pmarcusso/go-web/pkg/store"
-	"log"
-	"net/http"
-	"time"
+	"github.com/pmarcusso/go-web/pkg/web"
 )
-
-type Transaction struct {
-	Id              int       `form:"id" json:"id"`
-	CodTransaction  int       `form:"codTransaction" json:"codTransaction" binding:"required"`
-	CurrencyType    string    `form:"currency" json:"currency" binding:"required"`
-	Issuer          string    `form:"issuer" json:"issuer" binding:"required"`
-	Receiver        string    `form:"receiver" json:"receiver" binding:"required"`
-	DateTransaction time.Time `form:"dateTransaction" json:"dateTransaction" time_format:"2006-01-02"`
-}
 
 type ErrorMsg struct {
 	Field   string `json:"field"`
@@ -34,13 +27,54 @@ func getErrorMsg(fe validator.FieldError) string {
 	return "Erro desconhecido"
 }
 
+func TokenAuthMiddleware() gin.HandlerFunc {
+	requiredToken := os.Getenv("TOKEN")
+
+	// We want to make sure the token is set, bail if not
+	if requiredToken == "" {
+		log.Fatal("Please set token environment variable")
+	}
+
+	return func(c *gin.Context) {
+		token := c.GetHeader("token")
+
+		if token == "" {
+			c.AbortWithStatusJSON(
+				http.StatusUnauthorized,
+				web.NewResponse(http.StatusUnauthorized, nil, "token vazio"))
+			return
+		}
+
+		if token != requiredToken {
+			c.AbortWithStatusJSON(
+				http.StatusUnauthorized,
+				web.NewResponse(http.StatusUnauthorized, nil, "token inválido"),
+			)
+			return
+		}
+
+		c.Next()
+	}
+}
+
+// @title MELI Bootcamp API
+// @version 1.0
+// @description This API Handle MELI Products.
+// @termsOfService https://developers.mercadolibre.com.ar/es_ar/terminos-y-condiciones
+
+// @contact.name API Support
+// @contact.url https://developers.mercadolibre.com.ar/support
+
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 func main() {
 
-	if err := godotenv.Load(); err != nil {
+	if err := godotenv.Load("../.env"); err != nil {
+		log.Println(err)
 		log.Fatal("erro ao carregar o arquivo .env")
 	}
 
-	db := store.New(store.FileType, "./transactions.json")
+	db := store.New(store.FileType, "../transactions.json")
 	repo := transaction.NewRepository(db)
 	service := transaction.NewService(repo)
 	controller := handler.NewTransaction(service)
@@ -49,6 +83,8 @@ func main() {
 
 	transactionGroup := r.Group("/transactions")
 	{
+		transactionGroup.Use(TokenAuthMiddleware())
+
 		transactionGroup.GET("/", controller.GetAll())
 		transactionGroup.GET("/:id", controller.GetOne())
 		transactionGroup.POST("/", controller.Store())
