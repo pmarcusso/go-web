@@ -117,7 +117,7 @@ func (t *Transaction) UpdateIssuerReceiver() gin.HandlerFunc {
 }
 
 // Store StoreTransactions godoc
-// @Summary Store products
+// @Summary Store transactions
 // @Tags Transactions
 // @Description store transactions
 // @Accept  json
@@ -240,8 +240,6 @@ func (t *Transaction) Delete() gin.HandlerFunc {
 			c.JSON(http.StatusNotFound, web.NewResponse(http.StatusNotFound, nil, err.Error()))
 			return
 		}
-
-		c.JSON(http.StatusOK, gin.H{"data": fmt.Sprintf("o produto %d for removido", idConvertido)})
 		c.JSON(http.StatusOK, web.NewResponse(http.StatusNotFound, fmt.Sprintf("o produto %d for removido", idConvertido), ""))
 	}
 }
@@ -249,23 +247,23 @@ func (t *Transaction) Delete() gin.HandlerFunc {
 func validateFields(req request) error {
 
 	if req.CodTransaction == 0 {
-		return errors.New("O campo [codTransaction] está vazio ou nulo")
+		return errors.New("o campo [codTransaction] está vazio ou nulo")
 	}
 
 	if req.CurrencyType == "" {
-		return errors.New("O campo [currency] está vazio ou nulo")
+		return errors.New("o campo [currency] está vazio ou nulo")
 	}
 
 	if req.Issuer == "" {
-		return errors.New("O campo [issuer] está vazio ou nulo")
+		return errors.New("o campo [issuer] está vazio ou nulo")
 	}
 
 	if req.Receiver == "" {
-		return errors.New("O campo [receiver] está vazio ou nulo")
+		return errors.New("o campo [receiver] está vazio ou nulo")
 	}
 
 	if req.DateTransaction.String() == "" {
-		return errors.New("O campo [dateTransaction] está vazio ou nulo")
+		return errors.New("o campo [dateTransaction] está vazio ou nulo")
 	}
 
 	return nil

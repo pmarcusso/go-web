@@ -5,7 +5,7 @@
 *.dll
 *.so
 *.dylib
-.env
+
 
 # Test binary, built with `go test -c`
 *.test
@@ -19,3 +19,9 @@ go.work
 ### Go Patch ###
 /vendor/
 /Godeps/
+
+#Env
+.env
+
+#IDE
+.idea

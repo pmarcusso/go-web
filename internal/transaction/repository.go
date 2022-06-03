@@ -31,14 +31,16 @@ func (r *repository) GetAll() ([]Transaction, error) {
 
 	r.db.Read(&transactions)
 
-	//if len(transactions) == 0 {
-	//	transactions = make([]Transaction, 0)
-	//}
+	if len(transactions) == 0 {
+		transactions = make([]Transaction, 0)
+	}
 
 	return transactions, nil
 }
 
 func (r *repository) GetOne(id int) (Transaction, error) {
+	r.db.Read(&transactions)
+
 	for _, transaction := range transactions {
 		if id == transaction.Id {
 			return transaction, nil

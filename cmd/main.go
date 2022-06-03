@@ -9,9 +9,12 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
 	"github.com/pmarcusso/go-web/cmd/server/handler"
+	"github.com/pmarcusso/go-web/docs"
 	"github.com/pmarcusso/go-web/internal/transaction"
 	"github.com/pmarcusso/go-web/pkg/store"
 	"github.com/pmarcusso/go-web/pkg/web"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	"github.com/swaggo/gin-swagger/swaggerFiles"
 )
 
 type ErrorMsg struct {
@@ -80,6 +83,8 @@ func main() {
 	controller := handler.NewTransaction(service)
 
 	r := gin.Default()
+	docs.SwaggerInfo.Host = os.Getenv("HOST")
+	r.GET("docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	transactionGroup := r.Group("/transactions")
 	{
