@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
 	"github.com/pmarcusso/go-web/cmd/server/handler"
 	"github.com/pmarcusso/go-web/docs"
@@ -16,19 +15,6 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
 )
-
-type ErrorMsg struct {
-	Field   string `json:"field"`
-	Message string `json:"message"`
-}
-
-func getErrorMsg(fe validator.FieldError) string {
-	switch fe.Tag() {
-	case "required":
-		return "é necessário inserir um valor válido"
-	}
-	return "Erro desconhecido"
-}
 
 func TokenAuthMiddleware() gin.HandlerFunc {
 	requiredToken := os.Getenv("TOKEN")
@@ -100,7 +86,11 @@ func main() {
 
 	r.GET("/query", GetQueryParameterValueHandler)
 	r.GET("/greetings", greetingsHandler)
-	r.Run()
+
+	err := r.Run()
+	if err != nil {
+		return
+	}
 }
 
 func GetQueryParameterValueHandler(c *gin.Context) {

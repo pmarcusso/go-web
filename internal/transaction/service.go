@@ -92,5 +92,10 @@ func (s *service) Store(codTransaction int, currencyType, issuer, receiver strin
 }
 
 func (s *service) Delete(id int) error {
-	return s.repository.Delete(id)
+	err := s.repository.Delete(id)
+
+	if err != nil {
+		return err
+	}
+	return err
 }

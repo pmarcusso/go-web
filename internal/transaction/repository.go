@@ -29,7 +29,9 @@ func NewRepository(db store.Store) Repository {
 
 func (r *repository) GetAll() ([]Transaction, error) {
 
-	r.db.Read(&transactions)
+	if err := r.db.Read(&transactions); err != nil {
+		return []Transaction{}, err
+	}
 
 	if len(transactions) == 0 {
 		transactions = make([]Transaction, 0)
@@ -39,14 +41,19 @@ func (r *repository) GetAll() ([]Transaction, error) {
 }
 
 func (r *repository) GetOne(id int) (Transaction, error) {
-	r.db.Read(&transactions)
+	err := r.db.Read(&transactions)
+
+	if err != nil {
+		return Transaction{}, err
+	}
 
 	for _, transaction := range transactions {
 		if id == transaction.Id {
 			return transaction, nil
 		}
 	}
-	err := errors.New("id não encontrado")
+
+	err = errors.New("id não encontrado")
 
 	return Transaction{}, err
 }
@@ -61,7 +68,7 @@ func (r *repository) Store(codTransaction int, currencyType, issuer, receiver st
 	newTrasaction = r.generateId(&newTrasaction)
 	transactions = append(transactions, newTrasaction)
 
-	if err := r.db.Write(transactions); err != nil {
+	if err := r.db.Write(&transactions); err != nil {
 		return Transaction{}, err
 	}
 
@@ -77,7 +84,6 @@ func (r *repository) Update(id, codTransaction int, currencyType, issuer, receiv
 	transaction, err := r.GetOne(id)
 
 	if err != nil {
-		log.Println(err.Error())
 		return transaction, err
 	}
 
@@ -93,7 +99,7 @@ func (r *repository) Update(id, codTransaction int, currencyType, issuer, receiv
 		}
 	}
 
-	if err := r.db.Write(transactions); err != nil {
+	if err := r.db.Write(&transactions); err != nil {
 		return Transaction{}, err
 	}
 
@@ -120,7 +126,7 @@ func (r *repository) UpdateIssuer(id int, issuer string) (Transaction, error) {
 		}
 	}
 
-	if err := r.db.Write(transactions); err != nil {
+	if err := r.db.Write(&transactions); err != nil {
 		return Transaction{}, err
 	}
 
@@ -148,7 +154,7 @@ func (r *repository) UpdateReceiver(id int, receiver string) (Transaction, error
 		}
 	}
 
-	if err := r.db.Write(transactions); err != nil {
+	if err := r.db.Write(&transactions); err != nil {
 		return Transaction{}, err
 	}
 
@@ -175,7 +181,7 @@ func (r *repository) Delete(id int) error {
 	}
 
 	transactions = append(transactions[:index], transactions[index+1:]...)
-	if err := r.db.Write(transactions); err != nil {
+	if err := r.db.Write(&transactions); err != nil {
 		return err
 	}
 	return nil
