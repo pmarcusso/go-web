@@ -23,6 +23,8 @@ func createServer() *gin.Engine {
 	pr := r.Group("/transactions")
 	pr.POST("/", p.Store())
 	pr.GET("/", p.GetAll())
+	pr.PUT("/:id", p.Update())
+	pr.DELETE("/:id", p.Delete())
 	return r
 }
 
@@ -48,7 +50,6 @@ func TestTransaction_Store(t *testing.T) {
 	r := createServer()
 
 	req, rr := createRequestTest(http.MethodPost, "/transactions/", `{
-  "id": 1,
   "codTransaction": 4534534,
   "currency": "EUR",
   "issuer": "Londres",
@@ -59,4 +60,32 @@ func TestTransaction_Store(t *testing.T) {
 	r.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusCreated, rr.Code)
+}
+
+func TestTransaction_Update(t *testing.T) {
+	r := createServer()
+
+	req, rr := createRequestTest(http.MethodPut, "/transactions/1",
+		`{
+  "codTransaction": 4534534,
+  "currency": "CHL",
+  "issuer": "SURINAME",
+  "receiver": "EUA",
+  "dateTransaction": "0001-01-01T00:00:00Z"
+ }`)
+
+	r.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code)
+}
+
+func TestTransaction_Delete(t *testing.T) {
+
+	r := createServer()
+	req, rr := createRequestTest(http.MethodDelete, "/transactions/2", "")
+
+	r.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusNoContent, rr.Code)
+
 }

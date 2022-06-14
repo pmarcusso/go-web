@@ -239,7 +239,7 @@ func (t *Transaction) Delete() gin.HandlerFunc {
 			c.JSON(http.StatusNotFound, web.NewResponse(http.StatusNotFound, nil, err.Error()))
 			return
 		}
-		c.JSON(http.StatusOK, web.NewResponse(http.StatusNotFound, fmt.Sprintf("o produto %d foi removido", idConvertido), ""))
+		c.JSON(http.StatusNoContent, web.NewResponse(http.StatusNoContent, fmt.Sprintf("o produto %d foi removido", idConvertido), ""))
 	}
 }
 
