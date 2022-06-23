@@ -11,4 +11,4 @@ type Transaction struct {
 	DateTransaction time.Time `form:"dateTransaction" json:"dateTransaction" time_format:"2006-01-02"`
 }
 
-var transactions []Transaction
+//var transactions []Transaction

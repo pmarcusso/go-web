@@ -1,16 +1,17 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 	"github.com/pmarcusso/go-web/cmd/server/handler"
 	"github.com/pmarcusso/go-web/docs"
 	"github.com/pmarcusso/go-web/internal/transaction"
-	"github.com/pmarcusso/go-web/pkg/store"
 	"github.com/pmarcusso/go-web/pkg/web"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
@@ -58,17 +59,25 @@ func TokenAuthMiddleware() gin.HandlerFunc {
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 func main() {
 
-	if err := godotenv.Load("../.env"); err != nil {
+	if err := godotenv.Load("./.env"); err != nil {
 		log.Println(err)
 		log.Fatal("erro ao carregar o arquivo .env")
 	}
 
-	db := store.New(store.FileType, "../transactions.json")
-	repo := transaction.NewRepository(db)
+	r := gin.Default()
+
+	//db := store.New(store.FileType, "../transactions.json")
+
+	dataSource := "root:root@tcp(localhost:3306)/bootcamp?parseTime=true"
+	conn, err := sql.Open("mysql", dataSource)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	repo := transaction.NewRepository(conn)
 	service := transaction.NewService(repo)
 	controller := handler.NewTransaction(service)
 
-	r := gin.Default()
 	docs.SwaggerInfo.Host = os.Getenv("HOST")
 	r.GET("docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -87,7 +96,7 @@ func main() {
 	r.GET("/query", GetQueryParameterValueHandler)
 	r.GET("/greetings", greetingsHandler)
 
-	err := r.Run()
+	err = r.Run()
 	if err != nil {
 		return
 	}

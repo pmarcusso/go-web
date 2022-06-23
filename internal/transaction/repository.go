@@ -1,9 +1,8 @@
 package transaction
 
 import (
+	"database/sql"
 	"errors"
-	"github.com/pmarcusso/go-web/pkg/store"
-	"log"
 	"time"
 )
 
@@ -18,10 +17,10 @@ type Repository interface {
 }
 
 type repository struct {
-	db store.Store
+	db *sql.DB
 }
 
-func NewRepository(db store.Store) Repository {
+func NewRepository(db *sql.DB) Repository {
 	return &repository{
 		db: db,
 	}
@@ -29,22 +28,40 @@ func NewRepository(db store.Store) Repository {
 
 func (r *repository) GetAll() ([]Transaction, error) {
 
-	if err := r.db.Read(&transactions); err != nil {
-		return []Transaction{}, err
+	transactions := []Transaction{}
+
+	rows, err := r.db.Query(sqlGetAll)
+
+	if err != nil {
+		return transactions, err
 	}
 
-	if len(transactions) == 0 {
-		transactions = make([]Transaction, 0)
+	defer rows.Close() // impedir vazamento de memoria
+
+	for rows.Next() {
+		var transaction Transaction
+
+		err := rows.Scan(&transaction.Id, &transaction.CodTransaction, &transaction.CurrencyType, &transaction.Issuer,
+			&transaction.Receiver, &transaction.DateTransaction)
+
+		if err != nil {
+			return transactions, err
+		}
+
+		transactions = append(transactions, transaction)
 	}
 
 	return transactions, nil
 }
 
 func (r *repository) GetOne(id int) (Transaction, error) {
-	err := r.db.Read(&transactions)
+
+	var transaction Transaction
+
+	transactions, err := r.GetAll()
 
 	if err != nil {
-		return Transaction{}, err
+		return transaction, err
 	}
 
 	for _, transaction := range transactions {
@@ -53,33 +70,36 @@ func (r *repository) GetOne(id int) (Transaction, error) {
 		}
 	}
 
-	err = errors.New("id não encontrado")
-
-	return Transaction{}, err
+	return transaction, errors.New("id não encontrado")
 }
 
 func (r *repository) Store(codTransaction int, currencyType, issuer, receiver string, dateTransaction time.Time) (Transaction, error) {
 
-	err := r.db.Read(&transactions)
+	transaction := Transaction{CodTransaction: codTransaction, CurrencyType: currencyType, Issuer: issuer, Receiver: receiver, DateTransaction: time.Now()}
+
+	stmt, err := r.db.Prepare(sqlStore)
+
 	if err != nil {
-		return Transaction{}, err
-	}
-	newTrasaction := Transaction{CodTransaction: codTransaction, CurrencyType: currencyType, Issuer: issuer, Receiver: receiver, DateTransaction: dateTransaction}
-	newTrasaction = r.generateId(&newTrasaction)
-	transactions = append(transactions, newTrasaction)
-
-	if err := r.db.Write(&transactions); err != nil {
-		return Transaction{}, err
+		return transaction, err
 	}
 
-	return newTrasaction, nil
+	defer stmt.Close()
+
+	res, err := stmt.Exec(&transaction.CodTransaction, &transaction.CurrencyType, &transaction.Issuer,
+		&transaction.Receiver, &transaction.DateTransaction)
+
+	if err != nil {
+		return transaction, err
+	}
+
+	lastID, err := res.LastInsertId()
+
+	transaction.Id = int(lastID)
+
+	return transaction, nil
 }
 
 func (r *repository) Update(id, codTransaction int, currencyType, issuer, receiver string, dateTransaction time.Time) (Transaction, error) {
-	err := r.db.Read(&transactions)
-	if err != nil {
-		return Transaction{}, err
-	}
 
 	transaction, err := r.GetOne(id)
 
@@ -93,116 +113,136 @@ func (r *repository) Update(id, codTransaction int, currencyType, issuer, receiv
 	transaction.Receiver = receiver
 	transaction.DateTransaction = dateTransaction
 
-	for i := range transactions {
-		if transactions[i].Id == transaction.Id {
-			transactions[i] = transaction
-		}
+	stmt, err := r.db.Prepare(sqlUpdate)
+
+	if err != nil {
+		return transaction, err
 	}
 
-	if err := r.db.Write(&transactions); err != nil {
-		return Transaction{}, err
+	defer stmt.Close()
+
+	_, err = stmt.Exec(&transaction.CodTransaction, &transaction.CurrencyType, &transaction.Issuer, &transaction.Receiver, &transaction.Id)
+
+	if err != nil {
+		return transaction, err
 	}
 
 	return transaction, nil
 }
 
 func (r *repository) UpdateIssuer(id int, issuer string) (Transaction, error) {
-	err := r.db.Read(&transactions)
-	if err != nil {
-		return Transaction{}, err
-	}
 
 	issuerTransaction, err := r.GetOne(id)
 
 	if err != nil {
-		log.Println(err.Error())
 		return issuerTransaction, err
 	}
 
-	for i := range transactions {
-		if transactions[i].Id == issuerTransaction.Id {
-			transactions[i].Issuer = issuer
-			issuerTransaction = transactions[i]
-		}
+	issuerTransaction.Issuer = issuer
+
+	stmt, err := r.db.Prepare(sqlUpdateIssuer)
+
+	if err != nil {
+		return issuerTransaction, err
 	}
 
-	if err := r.db.Write(&transactions); err != nil {
-		return Transaction{}, err
+	defer stmt.Close()
+
+	_, err = stmt.Exec(&issuerTransaction.Issuer, &issuerTransaction.Id)
+
+	if err != nil {
+		return issuerTransaction, err
 	}
 
 	return issuerTransaction, nil
 }
 
 func (r *repository) UpdateReceiver(id int, receiver string) (Transaction, error) {
-	err := r.db.Read(&transactions)
-	if err != nil {
-		return Transaction{}, err
-	}
-
 	receiverTransaction, err := r.GetOne(id)
+
 	if err != nil {
-		log.Println(err.Error())
 		return receiverTransaction, err
 	}
 
 	receiverTransaction.Receiver = receiver
 
-	for i := range transactions {
-		if transactions[i].Id == receiverTransaction.Id {
-			transactions[i].Receiver = receiverTransaction.Receiver
-			receiverTransaction = transactions[i]
-		}
+	stmt, err := r.db.Prepare(sqlUpdateReceiver)
+
+	if err != nil {
+		return receiverTransaction, err
 	}
 
-	if err := r.db.Write(&transactions); err != nil {
-		return Transaction{}, err
-	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(&receiverTransaction.Receiver, &receiverTransaction.Id)
 
 	return receiverTransaction, nil
 }
 
 func (r *repository) Delete(id int) error {
-	err := r.db.Read(&transactions)
-	if err != nil {
-		return err
-	}
+
 	transaction, err := r.GetOne(id)
-	var index int
-
-	for i := range transactions {
-		if transactions[i].Id == transaction.Id {
-			index = i
-		}
-	}
 
 	if err != nil {
-		log.Println(err.Error())
 		return err
 	}
 
-	transactions = append(transactions[:index], transactions[index+1:]...)
-	if err := r.db.Write(&transactions); err != nil {
+	stmt, err := r.db.Prepare(slqDelete)
+
+	if err != nil {
 		return err
 	}
+
+	defer stmt.Close()
+
+	_, err = stmt.Exec(&transaction.Id)
+
+	if err != nil {
+		return err
+	}
+
 	return nil
+	//err := r.db.Read(&transactions)
+	//if err != nil {
+	//	return err
+	//}
+	//transaction, err := r.GetOne(id)
+	//var index int
+	//
+	//for i := range transactions {
+	//	if transactions[i].Id == transaction.Id {
+	//		index = i
+	//	}
+	//}
+	//
+	//if err != nil {
+	//	log.Println(err.Error())
+	//	return err
+	//}
+	//
+	//transactions = append(transactions[:index], transactions[index+1:]...)
+	//if err := r.db.Write(&transactions); err != nil {
+	//	return err
+	//}
+	//return nil
 }
 
-func (r *repository) generateId(transaction *Transaction) Transaction {
-
-	if err := r.db.Read(&transactions); err != nil {
-		return Transaction{}
-	}
-
-	transLen := len(transactions)
-
-	if transLen == 0 {
-		transaction.Id = 1
-		return *transaction
-	}
-
-	lastTransaction := transactions[transLen-1]
-
-	transaction.Id = lastTransaction.Id + 1
-
-	return *transaction
-}
+//func (r *repository) generateId(transaction *Transaction) Transaction {
+//
+//	if err := r.db.Read(&transactions); err != nil {
+//		return Transaction{}
+//	}
+//
+//	transLen := len(transactions)
+//
+//	if transLen == 0 {
+//		transaction.Id = 1
+//		return *transaction
+//	}
+//
+//	lastTransaction := transactions[transLen-1]
+//
+//	transaction.Id = lastTransaction.Id + 1
+//
+//	return *transaction
+//}

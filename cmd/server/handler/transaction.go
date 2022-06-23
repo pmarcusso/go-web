@@ -162,13 +162,6 @@ func (t *Transaction) GetOne() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
 
-		// token := c.GetHeader("token")
-
-		// if token != os.Getenv("TOKEN") {
-		// 	c.JSON(http.StatusUnauthorized, web.NewResponse(http.StatusUnauthorized, nil, "token inválido"))
-		// 	return
-		// }
-
 		idConvertido, err := strconv.Atoi(id)
 
 		if err != nil {
@@ -184,7 +177,7 @@ func (t *Transaction) GetOne() gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, web.NewResponse(http.StatusNotFound, oneTransaction, ""))
+		c.JSON(http.StatusOK, web.NewResponse(http.StatusOK, oneTransaction, ""))
 	}
 }
 
