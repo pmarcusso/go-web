@@ -2,6 +2,10 @@ package main
 
 import (
 	"database/sql"
+	"github.com/pmarcusso/go-web/internal/shared/middleware"
+	"github.com/pmarcusso/go-web/internal/transaction/controller"
+	"github.com/pmarcusso/go-web/internal/transaction/repository"
+	"github.com/pmarcusso/go-web/internal/transaction/service"
 	"log"
 	"net/http"
 	"os"
@@ -9,43 +13,10 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
-	"github.com/pmarcusso/go-web/cmd/server/handler"
 	"github.com/pmarcusso/go-web/docs"
-	"github.com/pmarcusso/go-web/internal/transaction"
-	"github.com/pmarcusso/go-web/pkg/web"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
 )
-
-func TokenAuthMiddleware() gin.HandlerFunc {
-	requiredToken := os.Getenv("TOKEN")
-
-	// We want to make sure the token is set, bail if not
-	if requiredToken == "" {
-		log.Fatal("Please set token environment variable")
-	}
-
-	return func(c *gin.Context) {
-		token := c.GetHeader("token")
-
-		if token == "" {
-			c.AbortWithStatusJSON(
-				http.StatusUnauthorized,
-				web.NewResponse(http.StatusUnauthorized, nil, "token vazio"))
-			return
-		}
-
-		if token != requiredToken {
-			c.AbortWithStatusJSON(
-				http.StatusUnauthorized,
-				web.NewResponse(http.StatusUnauthorized, nil, "token inválido"),
-			)
-			return
-		}
-
-		c.Next()
-	}
-}
 
 // @title MELI Bootcamp API
 // @version 1.0
@@ -66,31 +37,29 @@ func main() {
 
 	r := gin.Default()
 
-	//db := store.New(store.FileType, "../transactions.json")
-
 	dataSource := "root:root@tcp(localhost:3306)/bootcamp?parseTime=true"
 	conn, err := sql.Open("mysql", dataSource)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	repo := transaction.NewRepository(conn)
-	service := transaction.NewService(repo)
-	controller := handler.NewTransaction(service)
+	repo := repository.NewRepository(conn)
+	newService := service.NewService(repo)
+	newTransaction := controller.NewTransaction(newService)
 
 	docs.SwaggerInfo.Host = os.Getenv("HOST")
 	r.GET("docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	transactionGroup := r.Group("/transactions")
 	{
-		transactionGroup.Use(TokenAuthMiddleware())
+		transactionGroup.Use(middleware.TokenAuthMiddleware())
 
-		transactionGroup.GET("/", controller.GetAll())
-		transactionGroup.GET("/:id", controller.GetOne())
-		transactionGroup.POST("/", controller.Store())
-		transactionGroup.PUT("/:id", controller.Update())
-		transactionGroup.PATCH("/:id", controller.UpdateIssuerReceiver())
-		transactionGroup.DELETE("/:id", controller.Delete())
+		transactionGroup.GET("/", newTransaction.GetAll())
+		transactionGroup.GET("/:id", newTransaction.GetOne())
+		transactionGroup.POST("/", newTransaction.Store())
+		transactionGroup.PUT("/:id", newTransaction.Update())
+		transactionGroup.PATCH("/:id", newTransaction.UpdateIssuerReceiver())
+		transactionGroup.DELETE("/:id", newTransaction.Delete())
 	}
 
 	r.GET("/query", GetQueryParameterValueHandler)

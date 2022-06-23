@@ -1,18 +1,19 @@
-package transaction
+package repository
 
 import (
 	"database/sql"
 	"errors"
+	"github.com/pmarcusso/go-web/internal/transaction/domain"
 	"time"
 )
 
 type Repository interface {
-	GetOne(id int) (Transaction, error)
-	GetAll() ([]Transaction, error)
-	Store(codTransaction int, currencyType, issuer, receiver string, dateTransaction time.Time) (Transaction, error)
-	Update(id, codTransaction int, currencyType, issuer, receiver string, dateTransaction time.Time) (Transaction, error)
-	UpdateIssuer(id int, issuer string) (Transaction, error)
-	UpdateReceiver(id int, receiver string) (Transaction, error)
+	GetOne(id int) (domain.Transaction, error)
+	GetAll() ([]domain.Transaction, error)
+	Store(codTransaction int, currencyType, issuer, receiver string, dateTransaction time.Time) (domain.Transaction, error)
+	Update(id, codTransaction int, currencyType, issuer, receiver string, dateTransaction time.Time) (domain.Transaction, error)
+	UpdateIssuer(id int, issuer string) (domain.Transaction, error)
+	UpdateReceiver(id int, receiver string) (domain.Transaction, error)
 	Delete(id int) error
 }
 
@@ -26,9 +27,9 @@ func NewRepository(db *sql.DB) Repository {
 	}
 }
 
-func (r *repository) GetAll() ([]Transaction, error) {
+func (r *repository) GetAll() ([]domain.Transaction, error) {
 
-	transactions := []Transaction{}
+	transactions := []domain.Transaction{}
 
 	rows, err := r.db.Query(sqlGetAll)
 
@@ -39,7 +40,7 @@ func (r *repository) GetAll() ([]Transaction, error) {
 	defer rows.Close() // impedir vazamento de memoria
 
 	for rows.Next() {
-		var transaction Transaction
+		var transaction domain.Transaction
 
 		err := rows.Scan(&transaction.Id, &transaction.CodTransaction, &transaction.CurrencyType, &transaction.Issuer,
 			&transaction.Receiver, &transaction.DateTransaction)
@@ -54,9 +55,9 @@ func (r *repository) GetAll() ([]Transaction, error) {
 	return transactions, nil
 }
 
-func (r *repository) GetOne(id int) (Transaction, error) {
+func (r *repository) GetOne(id int) (domain.Transaction, error) {
 
-	var transaction Transaction
+	var transaction domain.Transaction
 
 	transactions, err := r.GetAll()
 
@@ -73,9 +74,9 @@ func (r *repository) GetOne(id int) (Transaction, error) {
 	return transaction, errors.New("id não encontrado")
 }
 
-func (r *repository) Store(codTransaction int, currencyType, issuer, receiver string, dateTransaction time.Time) (Transaction, error) {
+func (r *repository) Store(codTransaction int, currencyType, issuer, receiver string, dateTransaction time.Time) (domain.Transaction, error) {
 
-	transaction := Transaction{CodTransaction: codTransaction, CurrencyType: currencyType, Issuer: issuer, Receiver: receiver, DateTransaction: time.Now()}
+	transaction := domain.Transaction{CodTransaction: codTransaction, CurrencyType: currencyType, Issuer: issuer, Receiver: receiver, DateTransaction: time.Now()}
 
 	stmt, err := r.db.Prepare(sqlStore)
 
@@ -99,7 +100,7 @@ func (r *repository) Store(codTransaction int, currencyType, issuer, receiver st
 	return transaction, nil
 }
 
-func (r *repository) Update(id, codTransaction int, currencyType, issuer, receiver string, dateTransaction time.Time) (Transaction, error) {
+func (r *repository) Update(id, codTransaction int, currencyType, issuer, receiver string, dateTransaction time.Time) (domain.Transaction, error) {
 
 	transaction, err := r.GetOne(id)
 
@@ -130,7 +131,7 @@ func (r *repository) Update(id, codTransaction int, currencyType, issuer, receiv
 	return transaction, nil
 }
 
-func (r *repository) UpdateIssuer(id int, issuer string) (Transaction, error) {
+func (r *repository) UpdateIssuer(id int, issuer string) (domain.Transaction, error) {
 
 	issuerTransaction, err := r.GetOne(id)
 
@@ -157,7 +158,7 @@ func (r *repository) UpdateIssuer(id int, issuer string) (Transaction, error) {
 	return issuerTransaction, nil
 }
 
-func (r *repository) UpdateReceiver(id int, receiver string) (Transaction, error) {
+func (r *repository) UpdateReceiver(id int, receiver string) (domain.Transaction, error) {
 	receiverTransaction, err := r.GetOne(id)
 
 	if err != nil {

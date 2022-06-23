@@ -1,9 +1,11 @@
-package transaction
+package service
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/pmarcusso/go-web/internal/transaction/domain"
+	"github.com/pmarcusso/go-web/internal/transaction/repository"
 	"github.com/pmarcusso/go-web/pkg/store"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -14,7 +16,7 @@ func TestService_GetAll(t *testing.T) {
 	t.Run("should return a valid produc list", func(t *testing.T) {
 		fileStore := store.New(store.FileType, "")
 
-		input := []Transaction{
+		input := []domain.Transaction{
 			{
 				Id:             1,
 				CodTransaction: 4534534,
@@ -39,7 +41,7 @@ func TestService_GetAll(t *testing.T) {
 
 		fileStore.AddMock(dbMock)
 
-		myRepo := NewRepository(fileStore)
+		myRepo := repository.NewRepository(fileStore)
 		myService := NewService(myRepo)
 		resp, _ := myService.GetAll()
 
@@ -61,7 +63,7 @@ func TestService_GetAll(t *testing.T) {
 
 		fileStore.AddMock(dbMock)
 
-		myRepo := NewRepository(fileStore)
+		myRepo := repository.NewRepository(fileStore)
 		myService := NewService(myRepo)
 
 		_, err := myService.GetAll()
@@ -73,7 +75,7 @@ func TestService_GetAll(t *testing.T) {
 func TestService_Store(t *testing.T) {
 	t.Run("test store a transaction", func(t *testing.T) {
 		fileStore := store.New(store.FileType, "")
-		input := []Transaction{
+		input := []domain.Transaction{
 			{
 				CodTransaction: 4534534,
 				CurrencyType:   "EUR",
@@ -87,7 +89,7 @@ func TestService_Store(t *testing.T) {
 		}
 
 		fileStore.AddMock(dbMock)
-		myRepo := NewRepository(fileStore)
+		myRepo := repository.NewRepository(fileStore)
 		myService := NewService(myRepo)
 		response, _ := myService.Store(input[0].CodTransaction, input[0].CurrencyType, input[0].Issuer, input[0].Receiver, time.Now())
 
@@ -100,7 +102,7 @@ func TestService_Store(t *testing.T) {
 
 	t.Run("test error store a transaction", func(t *testing.T) {
 		fileStore := store.New(store.FileType, "")
-		input := []Transaction{
+		input := []domain.Transaction{
 			{
 				CodTransaction: 4534534,
 				CurrencyType:   "EUR",
@@ -115,19 +117,19 @@ func TestService_Store(t *testing.T) {
 		}
 
 		fileStore.AddMock(dbMock)
-		myRepo := NewRepository(fileStore)
+		myRepo := repository.NewRepository(fileStore)
 		myService := NewService(myRepo)
 		result, resultError := myService.Store(input[0].CodTransaction, input[0].CurrencyType, input[0].Issuer, input[0].Receiver, time.Now())
 
 		assert.Equal(t, expectedError, resultError)
-		assert.Equal(t, Transaction{}, result)
+		assert.Equal(t, domain.Transaction{}, result)
 	})
 }
 
 func TestService_Update(t *testing.T) {
 	t.Run("test update a transaction", func(t *testing.T) {
 		fileStore := store.New(store.FileType, "")
-		input := []Transaction{
+		input := []domain.Transaction{
 			{
 				Id:             1,
 				CodTransaction: 4534534,
@@ -144,7 +146,7 @@ func TestService_Update(t *testing.T) {
 
 		fileStore.AddMock(&dbMock)
 
-		myRepo := NewRepository(fileStore)
+		myRepo := repository.NewRepository(fileStore)
 		myService := NewService(myRepo)
 
 		response, _ := myService.Update(input[0].Id, 123, "BR", "Brazil", "Argentina", time.Now())
@@ -160,7 +162,7 @@ func TestService_Update(t *testing.T) {
 		fileStore := store.New(store.FileType, "")
 		expectedError := errors.New("test error update")
 
-		input := []Transaction{
+		input := []domain.Transaction{
 			{
 				Id:             2,
 				CodTransaction: 4534534,
@@ -176,7 +178,7 @@ func TestService_Update(t *testing.T) {
 
 		fileStore.AddMock(&dbMock)
 
-		myRepo := NewRepository(fileStore)
+		myRepo := repository.NewRepository(fileStore)
 		myService := NewService(myRepo)
 
 		_, err := myService.Update(input[0].Id, input[0].CodTransaction, input[0].CurrencyType, input[0].Issuer, input[0].Receiver, time.Now())
@@ -189,7 +191,7 @@ func TestService_UpdateIssuer(t *testing.T) {
 
 		fileStore := store.New(store.FileType, "")
 
-		input := []Transaction{
+		input := []domain.Transaction{
 			{
 				Id:             2,
 				CodTransaction: 4534534,
@@ -204,7 +206,7 @@ func TestService_UpdateIssuer(t *testing.T) {
 		dbMock := store.Mock{Data: dataJson}
 		fileStore.AddMock(&dbMock)
 
-		myRepo := NewRepository(fileStore)
+		myRepo := repository.NewRepository(fileStore)
 		myService := NewService(myRepo)
 
 		result, _ := myService.UpdateIssuer(2, "Brasil")
@@ -214,7 +216,7 @@ func TestService_UpdateIssuer(t *testing.T) {
 	t.Run("should return error when id does not exists", func(t *testing.T) {
 		fileStore := store.New(store.FileType, "")
 
-		input := []Transaction{
+		input := []domain.Transaction{
 			{
 				Id:             2,
 				CodTransaction: 4534534,
@@ -229,7 +231,7 @@ func TestService_UpdateIssuer(t *testing.T) {
 		dbMock := store.Mock{Data: dataJson}
 		fileStore.AddMock(&dbMock)
 
-		myRepo := NewRepository(fileStore)
+		myRepo := repository.NewRepository(fileStore)
 		myService := NewService(myRepo)
 		result, err := myService.UpdateIssuer(3, "Brasil")
 		assert.Error(t, err)
@@ -242,7 +244,7 @@ func TestService_UpdateReceiver(t *testing.T) {
 
 		fileStore := store.New(store.FileType, "")
 
-		input := []Transaction{
+		input := []domain.Transaction{
 			{
 				Id:             2,
 				CodTransaction: 4534534,
@@ -257,7 +259,7 @@ func TestService_UpdateReceiver(t *testing.T) {
 		dbMock := store.Mock{Data: dataJson}
 		fileStore.AddMock(&dbMock)
 
-		myRepo := NewRepository(fileStore)
+		myRepo := repository.NewRepository(fileStore)
 		myService := NewService(myRepo)
 		result, _ := myService.UpdateReceiver(2, "Brasil")
 
@@ -270,7 +272,7 @@ func TestService_Delete(t *testing.T) {
 	t.Run("test service delete", func(t *testing.T) {
 		fileStore := store.New(store.FileType, "")
 
-		input := []Transaction{
+		input := []domain.Transaction{
 			{
 				Id:             2,
 				CodTransaction: 4534534,
@@ -286,7 +288,7 @@ func TestService_Delete(t *testing.T) {
 
 		fileStore.AddMock(&dbMock)
 
-		myRepo := NewRepository(fileStore)
+		myRepo := repository.NewRepository(fileStore)
 		myService := NewService(myRepo)
 		resp := myService.Delete(2)
 
@@ -296,7 +298,7 @@ func TestService_Delete(t *testing.T) {
 	t.Run("test service delete", func(t *testing.T) {
 		fileStore := store.New(store.FileType, "")
 
-		input := []Transaction{
+		input := []domain.Transaction{
 			{
 				Id:             2,
 				CodTransaction: 4534534,
@@ -312,7 +314,7 @@ func TestService_Delete(t *testing.T) {
 
 		fileStore.AddMock(&dbMock)
 
-		myRepo := NewRepository(fileStore)
+		myRepo := repository.NewRepository(fileStore)
 		myService := NewService(myRepo)
 		resp := myService.Delete(3)
 

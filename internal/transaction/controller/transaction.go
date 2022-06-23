@@ -1,15 +1,15 @@
-package handler
+package controller
 
 import (
 	"errors"
 	"fmt"
+	"github.com/pmarcusso/go-web/internal/transaction/service"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/pmarcusso/go-web/internal/transaction"
 	"github.com/pmarcusso/go-web/pkg/web"
 )
 
@@ -22,10 +22,10 @@ type request struct {
 }
 
 type Transaction struct {
-	service transaction.Service
+	service service.Service
 }
 
-func NewTransaction(t transaction.Service) *Transaction {
+func NewTransaction(t service.Service) *Transaction {
 	return &Transaction{service: t}
 }
 

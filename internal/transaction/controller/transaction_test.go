@@ -1,9 +1,10 @@
-package handler
+package controller
 
 import (
 	"bytes"
 	"github.com/gin-gonic/gin"
-	"github.com/pmarcusso/go-web/internal/transaction"
+	"github.com/pmarcusso/go-web/internal/transaction/repository"
+	"github.com/pmarcusso/go-web/internal/transaction/service"
 	"github.com/pmarcusso/go-web/pkg/store"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -15,8 +16,8 @@ import (
 func createServer() *gin.Engine {
 	_ = os.Setenv("TOKEN", "123456")
 	db := store.New(store.FileType, "../../../transactions.json")
-	repo := transaction.NewRepository(db)
-	service := transaction.NewService(repo)
+	repo := repository.NewRepository(db)
+	service := service.NewService(repo)
 	p := NewTransaction(service)
 	r := gin.Default()
 

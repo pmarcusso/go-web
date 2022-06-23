@@ -1,7 +1,9 @@
-package transaction
+package repository
 
 import (
 	"encoding/json"
+	"github.com/pmarcusso/go-web/internal/transaction/domain"
+	"github.com/pmarcusso/go-web/internal/transaction/service"
 	"github.com/pmarcusso/go-web/pkg/store"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -11,7 +13,7 @@ func TestRepository_GetAll(t *testing.T) {
 	t.Run("should return a valid produc list", func(t *testing.T) {
 		fileStore := store.New(store.FileType, "")
 
-		input := []Transaction{
+		input := []domain.Transaction{
 			{
 				Id:             1,
 				CodTransaction: 4534534,
@@ -45,7 +47,7 @@ func TestRepository_GetAll(t *testing.T) {
 
 	t.Run("should create an empty transaction when len is zero", func(t *testing.T) {
 
-		input := []Transaction{}
+		input := []domain.Transaction{}
 		dataJson, _ := json.Marshal(input)
 
 		fileStore := store.New(store.FileType, "")
@@ -54,11 +56,11 @@ func TestRepository_GetAll(t *testing.T) {
 		fileStore.AddMock(&dbMock)
 
 		myRepo := NewRepository(fileStore)
-		myService := NewService(myRepo)
+		myService := service.NewService(myRepo)
 
 		result, _ := myService.GetAll()
 
-		assert.Equal(t, make([]Transaction, 0), result)
+		assert.Equal(t, make([]domain.Transaction, 0), result)
 
 	})
 }
@@ -66,7 +68,7 @@ func TestRepository_GetAll(t *testing.T) {
 func TestRepositoryDelete(t *testing.T) {
 	fileStore := store.New(store.FileType, "")
 
-	input := []Transaction{
+	input := []domain.Transaction{
 		{
 			Id:             1,
 			CodTransaction: 4534534,

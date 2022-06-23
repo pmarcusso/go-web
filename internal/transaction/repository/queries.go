@@ -1,4 +1,4 @@
-package transaction
+package repository
 
 const (
 	sqlGetAll         = "SELECT * FROM transactions"
